@@ -2,6 +2,9 @@ import datetime
 import requests
 from prettytable import PrettyTable
 import re
+from PIL import Image, ImageDraw, ImageFont
+import io
+# import matplotlib.pyplot as plt
 
 
 class BitKongAPI:
@@ -75,12 +78,15 @@ class BitKongAPI:
     # Calculate the time left out of 60 minutes
     time_left = max(60 - (time_difference.total_seconds() / 60), 0)
 
-    return f"💸 {int(time_left)} minutes left out of 60 minutes."
+    return f"Time Left : {int(time_left)} minutes"
 
   def getData(self, request, need, take=1, index=2):
     #get current pool start time
     res1 = self.req()
-    startedAt = res1.json()['data']['leaderboard']['startedAt']
+    try:
+      startedAt = res1.json()['data']['leaderboard']['startedAt']
+    except:
+      startedAt = datetime.datetime.utcnow().isoformat()
     # print(startedAt)
     # timeLef = BitKongAPI.timeLeft(startedAt)
 
@@ -97,6 +103,36 @@ class BitKongAPI:
     return {"respondInjsn": respondInjsn, "need": need, "respond": res2}
 
   @staticmethod
+  def SimpleTourTable(res1, need=10):
+    data = []
+    total = len(res1.json()['data']['leaderboard']['spots'])
+
+    for i in range(need if total > need else total):
+      wagered = res1.json()['data']['leaderboard']['spots'][i]['wagered']
+      name = res1.json()['data']['leaderboard']['spots'][i]['user']['login']
+      bonus = res1.json()['data']['leaderboard']['spots'][i]['bonus']
+      data.append([name, wagered, bonus])
+
+    table = PrettyTable()
+    table.field_names = ["Name", "Wager", "Prize(Kong)"]
+    for e, (nam, wgr, bns) in enumerate(data, start=1):
+      table.add_row([nam, int(wgr), bns])
+    return table
+    # Create an image from the table
+    # table_text = table.get_string()
+    # table_image = Image.new("RGB", (800, 600), (255, 255, 255))
+    # d = ImageDraw.Draw(table_image)
+    # fnt = ImageFont.load_default()
+
+    # d.text((10, 10), table_text, fill=(0, 0, 0), font=fnt)
+
+    # # Save the image to a byte stream
+    # img_byte_array = io.BytesIO()
+    # table_image.save(img_byte_array, format='PNG')
+    # img_byte_array.seek(0)
+
+    # return img_byte_array
+  @staticmethod
   def TourTable(res1, need=10):
     data = []
     total = len(res1.json()['data']['leaderboard']['spots'])
@@ -104,10 +140,67 @@ class BitKongAPI:
     for i in range(need if total > need else total):
       wagered = res1.json()['data']['leaderboard']['spots'][i]['wagered']
       name = res1.json()['data']['leaderboard']['spots'][i]['user']['login']
-      data.append([name, wagered])
+      bonus = res1.json()['data']['leaderboard']['spots'][i]['bonus']
+      data.append([name, wagered, bonus])
 
     table = PrettyTable()
-    table.field_names = ["Pos", "Name", "Wager"]
-    for e, (element, count) in enumerate(data, start=1):
-      table.add_row([e, element, count])
-    return table
+    table.field_names = ["No", "Name", "Wager", "Prize(Kong)"]
+    for e, (nam, wgr, bns) in enumerate(data, start=1):
+      table.add_row([e, nam, int(wgr), bns])
+    # return table
+
+    # font_path = "Roboto-Light.ttf"
+    # # font_size = 16  # Adjust the font size as needed
+    # font = ImageFont.truetype(font_path)
+
+    # table_text = str(table)
+    # text_width =  len(table_text.split("\n")[0])
+    # text_height =  len(table_text.split("\n"))
+    # # print(text_width,text_height)
+
+    # # Create an image with a white background
+    # im = Image.new("RGB", (text_width * 7, text_height * 15), "white")
+    # draw = ImageDraw.Draw(im)
+    # # font = ImageFont.truetype("FreeMono.ttf", 15)
+    # # font = ImageFont.truetype("fonts/FreeMono.ttf", 15)
+
+    # # Draw the table text on the image
+    # draw.text((22, 1), table_text,font=font, fill="black")
+
+    # # Save the image to a byte stream in PNG format
+    # img_byte_array = io.BytesIO()
+    # im.save(img_byte_array, format='PNG')
+    # img_byte_array.seek(0)
+
+    # return img_byte_array
+
+    # Custom font and size
+    # font_path = "Roboto-Light.ttf"
+    font_size = 15
+    # font = ImageFont.truetype(font_path, font_size)
+
+    table_text = str(table)
+    text_width = len(table_text.split("\n")[0])
+    text_height = len(table_text.split("\n"))
+
+    # Create an image with a white background
+    im = Image.new("RGB", (text_width * 7, text_height * 15), "white")
+    draw = ImageDraw.Draw(im)
+    # Define the position for the table
+    x, y = 21, 1
+    # draw.text((22, 1), table_text,font=font, fill="black")
+
+    # Split the table string into lines and draw each line with the custom font
+    for line in table.get_formatted_string().splitlines():
+      # print(line.split("|"))
+      draw.text((x, y), line, fill="black", antialias=True)
+
+      y += font_size  # Adjust for the font size
+
+    # Save the image to a byte stream in PNG format
+    img_byte_array = io.BytesIO()
+    im.save(img_byte_array, format='PNG')
+    img_byte_array.seek(0)
+
+    # Return the image
+    return img_byte_array
