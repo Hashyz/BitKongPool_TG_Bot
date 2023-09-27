@@ -13,10 +13,9 @@ class BitKongAPI:
     pass
 
   # @staticmethod
-  def req(self,
-          current_time=datetime.datetime.utcnow().isoformat() + 'Z',
-          take=1,
-          index=2):
+  def req(self, current_time=None, take=1, index=2):
+    if current_time == None:
+      current_time = datetime.datetime.utcnow().isoformat() + 'Z'
 
     url = "https://api.playhub.io:443/graphql"
     headers = {
