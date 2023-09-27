@@ -2,4 +2,4 @@ requests
 prettytable
 telebot
 pyTelegramBotAPI
-PIL
+Pillow
